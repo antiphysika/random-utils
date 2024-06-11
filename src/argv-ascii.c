@@ -15,6 +15,16 @@ set_prog_name (const char *argv0)
     ++prog_name;
 }
 
+#ifndef DEBUG_BUILD
+# define DEBUG(message, ...)
+#else
+# define DEBUG(message, ...)                               \
+do                                                         \
+{                                                          \
+  fprintf(stderr, "DEBUG: " message "\n", ## __VA_ARGS__); \
+} while (0)
+#endif
+
 int
 main (int argc, char **argv)
 {
@@ -37,7 +47,7 @@ main (int argc, char **argv)
 
     if (arg[0] != '-')
     {
-      fprintf(stderr, "DEBUG: breaking out of option-parsing loop\n");
+      DEBUG("breaking out of option-parsing loop");
       break;
     }
 
@@ -112,17 +122,18 @@ main (int argc, char **argv)
   }
 
 #if 0
-  fprintf(stderr, "DEBUG: optind = %d\n", optind);
-  fprintf(stderr, "DEBUG: optind + 2 = %d\n", optind + 2);
-  fprintf(stderr, "DEBUG: argc = %d\n", argc);
-  fprintf(stderr, "DEBUG: argv[optind] = %s\n", argv[optind+2]);
+  DEBUG("optind = %d\n", optind);
+  DEBUG("optind + 2 = %d\n", optind + 2);
+  DEBUG("argc = %d\n", argc);
+  DEBUG("argv[optind] = %s\n", argv[optind+2]);
 #endif
 
   if (optind + 2 < argc)
   {
-    int tot = 0;
+    long tot = 0;
     const char *arg = argv[optind + 2];
     int arg_len = strlen(arg);
+    long sum;
 
     printf("argv[] = %s\n\n", arg);
 
@@ -133,12 +144,15 @@ main (int argc, char **argv)
       tot += ch;
     }
 
-    printf("\nASCII SUM: %d\n", tot);
+    sum = tot + opt_add;
+    printf("\nASCII SUM: %ld\n", tot);
 
     if (opt_add > 0)
-      printf("ADD: %ld + %d = %ld\n", opt_add, tot, opt_add + tot);
+      printf("ADD: %ld + %ld = %ld\n", tot, opt_add, sum);
     if (opt_mult > 0)
-      printf("MULT: %ld * (%ld + %ld) = %ld\n", opt_mult, opt_add, tot, opt_mult * (tot + opt_add));
+    {
+      printf("MULT: %ld * %ld = %ld\n", opt_mult, sum, opt_mult * sum);
+    }
   }
 
   return EXIT_SUCCESS;

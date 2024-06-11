@@ -10,9 +10,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef DEBUG_BUILD
+# define DEBUG(message, ...)
+#else
+# define DEBUG(message, ...)                               \
+do                                                         \
+{                                                          \
+  fprintf(stderr, "DEBUG: " message "\n", ## __VA_ARGS__); \
+} while (0)
+#endif
+
 /* Program name */
 static char *prog_name;
 
+/* {{{ static inline void set_prog_name(const char *)
+ *
+ */
 static inline void
 set_prog_name (const char *argv0)
 {
@@ -22,14 +35,22 @@ set_prog_name (const char *argv0)
   else
     ++prog_name;
 }
+/* END of set_prog_name() }}} */
 
+/* {{{ static inline void usage_short(void)
+ *
+ */
 static inline void
 usage_short (void)
 {
   fprintf(stderr, "Usage: %s <args...>\n", prog_name);
   exit(1);
 }
+/* END of usage_short() }}} */
 
+/* {{{ static inline void verror(const char *, va_list)
+ *
+ */
 static inline void
 verror (const char *format, va_list args)
 {
@@ -37,7 +58,11 @@ verror (const char *format, va_list args)
   vfprintf(stderr, format, args);
   fputc('\n', stderr);
 }
+/* END of verror() }}} */
 
+/* {{{ static inline void error(const char *, ...)
+ *
+ */
 static inline void
 error (const char *format, ...)
 {
@@ -47,7 +72,11 @@ error (const char *format, ...)
   verror(format, args);
   va_end(args);
 }
+/* END of error() }}} */
 
+/* {{{ static inline void die(const char *, ...)
+ *
+ */
 static inline void
 die (const char *format, ...)
 {
@@ -59,17 +88,11 @@ die (const char *format, ...)
 
   exit(EXIT_FAILURE);
 }
+/* END of die() }}} */
 
-#ifndef DEBUG_BUILD
-# define DEBUG(message, ...)
-#else
-# define DEBUG(message, ...)                               \
-do                                                         \
-{                                                          \
-  fprintf(stderr, "DEBUG: " message "\n", ## __VA_ARGS__); \
-} while (0)
-#endif
-
+/* {{{ int main(int, char **)
+ *
+ */
 int
 main (int argc, char **argv)
 {
@@ -178,6 +201,8 @@ main (int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
+
+/* END of main() }}} */
 
 /*
  * vim: ts=2 sw=2 et fdm=marker :

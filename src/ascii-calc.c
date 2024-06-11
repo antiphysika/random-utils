@@ -5,6 +5,7 @@
  * easy-to-remember strings.
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,43 @@ set_prog_name (const char *argv0)
     ++prog_name;
 }
 
+static inline void
+usage_short (void)
+{
+  fprintf(stderr, "Usage: %s <args...>\n", prog_name);
+  exit(1);
+}
+
+static inline void
+verror (const char *format, va_list args)
+{
+  fprintf(stderr, "%s: Error: ", prog_name);
+  vfprintf(stderr, format, args);
+  fputc('\n', stderr);
+}
+
+static inline void
+error (const char *format, ...)
+{
+  va_list args;
+
+  va_start(args, format);
+  verror(format, args);
+  va_end(args);
+}
+
+static inline void
+die (const char *format, ...)
+{
+  va_list args;
+
+  va_start(args, format);
+  verror(format, args);
+  va_end(args);
+
+  exit(EXIT_FAILURE);
+}
+
 #ifndef DEBUG_BUILD
 # define DEBUG(message, ...)
 #else
@@ -37,17 +75,14 @@ main (int argc, char **argv)
 {
   long opt_add = -1;
   long opt_mult = -1;
-  int optind = 1;
+  int opts_end = 0;
 
   set_prog_name(argv[0]);
 
   if (argc < 2)
-  {
-    fprintf(stderr, "Usage: %s <args...>\n", prog_name);
-    exit(1);
-  }
+    usage_short();
 
-  for (int i = 1, optind = 1; i < argc; i++, optind++)
+  for (int i = 1; i < argc; i++, opts_end++)
   {
     const char *arg = argv[i];
     char *strtol_endptr = NULL;
@@ -64,12 +99,11 @@ main (int argc, char **argv)
 
       if (!p)
       {
-        optind++;
+        opts_end++;
         continue;
       }
 
-      fprintf(stderr, "%s: Error: Invalid option '%s'\n", prog_name, arg);
-      exit(EXIT_FAILURE);
+      die("Invalid option '%s'", arg);
     }
 
     if (strncmp(arg, "--add=", 6) == 0)  // strlen("--add=") == 6
@@ -77,24 +111,17 @@ main (int argc, char **argv)
       const char *p = arg + 6;
 
       if (!p)
-      {
-        fprintf(stderr, "%s: Error: Option --add requires an integer argument\n", prog_name);
-        exit(EXIT_FAILURE);
-      }
+        die("Option --add requires an integer argument");
 
       opt_add = strtol(p, &strtol_endptr, 10);
       if (*strtol_endptr)
-      {
-        fprintf(stderr, "%s: Error: Argument '%s' to --add is not a valid integer\n", prog_name, p);
-        exit(EXIT_FAILURE);
-      }
+        die("Argument '%s' to --add is not a valid integer", p);
       else if (opt_add < 1)
-      {
-        fprintf(stderr, "%s: Error: Argument '%s' to --add must be a positive integer\n", prog_name, p);
-        exit(EXIT_FAILURE);
-      }
+        die("Argument '%s' to --add must be a positive integer", p);
 
-      optind++;
+      DEBUG("Parsed --add option argument opt_add = %ld", opt_add);
+
+      opts_end++;
       continue;
     }
 
@@ -103,42 +130,31 @@ main (int argc, char **argv)
       const char *p = arg + 7;
 
       if (!p)
-      {
-        fprintf(stderr, "%s: Error: Option --mult requires an integer argument\n", prog_name);
-        exit(EXIT_FAILURE);
-      }
+        die("Option --mult requires an integer argument");
 
       opt_mult = strtol(p, &strtol_endptr, 10);
       if (*strtol_endptr)
-      {
-        fprintf(stderr, "%s: Error: Argument '%s' to --mult is not a valid integer\n", prog_name, p);
-        exit(EXIT_FAILURE);
-      }
+        die("Argument '%s' to --mult is not a valid integer", p);
       else if (opt_mult < 1)
-      {
-        fprintf(stderr, "%s: Error: Argument '%s' to --mult must be a positive integer\n", prog_name, p);
-        exit(EXIT_FAILURE);
-      }
+        die("Argument '%s' to --mult must be a positive integer", p);
 
-      optind++;
+      DEBUG("Parsed --mult option argument opt_mult = %ld", opt_mult);
+
+      opts_end++;
       continue;
     }
 
-    fprintf(stderr, "%s: Unexpected argument '%s'\n", prog_name, arg);
-    exit(EXIT_FAILURE);
+    die("Unexpected argument '%s'", arg);
   }
 
-#if 0
-  DEBUG("optind = %d\n", optind);
-  DEBUG("optind + 2 = %d\n", optind + 2);
-  DEBUG("argc = %d\n", argc);
-  DEBUG("argv[optind] = %s\n", argv[optind+2]);
-#endif
+  DEBUG("argc = %d", argc);
+  DEBUG("opts_end = %d", opts_end);
+  DEBUG("argv[opts_end] = %s", argv[opts_end - 1]);
 
-  if (optind + 2 < argc)
+  if (opts_end == argc)
   {
     long tot = 0;
-    const char *arg = argv[optind + 2];
+    const char *arg = argv[opts_end - 1];
     int arg_len = strlen(arg);
     long sum;
 
@@ -157,9 +173,7 @@ main (int argc, char **argv)
     if (opt_add > 0)
       printf("ADD: %ld + %ld = %ld\n", tot, opt_add, sum);
     if (opt_mult > 0)
-    {
       printf("MULT: %ld * %ld = %ld\n", opt_mult, sum, opt_mult * sum);
-    }
   }
 
   return EXIT_SUCCESS;

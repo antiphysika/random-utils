@@ -1,3 +1,10 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * Simple utility which I use to generate TCP port numbers from
+ * easy-to-remember strings.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
